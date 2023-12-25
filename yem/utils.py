@@ -5,12 +5,22 @@
 '''
 
 import os, sys, yaml
+import datetime, socket
 
 Tag = {
     'ok': f"\033[32m｜>>>｜\033[0m", # green
     'x':  f"\033[31m｜×××｜\033[0m", # red
     't':  f"\033[36m｜---｜\033[0m", # cyan
 }
+
+def job_stamp():
+    git_info = os.popen("git log -1 --pretty=format:'[%h] %s'").read().strip()
+    job_date = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    hostname = socket.gethostname()
+    cuda_visible_devices = os.environ.get('CUDA_VISIBLE_DEVICES')
+
+    job_stamp = f'# {job_date} @ {hostname} | GPU:{cuda_visible_devices}\n# Git version: {git_info}\n'
+    return job_stamp
 
 def yaml_float_parsing(opt, yaml_dict):
     '''
@@ -22,6 +32,7 @@ def yaml_float_parsing(opt, yaml_dict):
     for key, value in yaml_dict.items():
         if key in opt.__dict__:
             if isinstance(opt.__dict__[key], float):
+                value = 0 if not value else value
                 yaml_dict[key] = float(value)
             elif isinstance(opt.__dict__[key], list) and isinstance(opt.__dict__[key][0], float):
                 yaml_dict[key] = [float(item) for item in value]
@@ -82,6 +93,7 @@ def auto_update_config(opt, new_job_saving=False):
     if isUpdating:
         if new_job_saving:
             cfg = open(new_job_saving, 'w+') # 输出到新的保存的config文件
+            print(job_stamp(), file=cfg)
         else:
             cfg = open(opt.config, 'w+') # 更新到原config文件上
         print('JOB:', file=cfg)
@@ -190,15 +202,15 @@ def check_job_path(opt):
     Args:
         opt: the parsed args from opts.py
     '''
-    if os.path.exists(f'{opt.result_path}/{opt.task}/{opt.log_time}'):
+    if os.path.exists(f'{opt.result_path}/{opt.task}/{opt.log_time}/fold-{opt.fold}'):
         #> if detected a finished job, ask user if continue
-        if os.path.exists(f'{opt.result_path}/{opt.task}/{opt.log_time}/.FINISHED_JOB'):
+        if os.path.exists(f'{opt.result_path}/{opt.task}/{opt.log_time}/fold-{opt.fold}/.FINISHED_JOB'):
             user_input = input(f"A Finished job [{opt.task}-{opt.log_time}] is already existed.\nIf continue the previous checkpoint may be overwritten.\nDo you really want to continue? (yes/no): ")
             if user_input.lower() != "yes":
                 print("The job have stopped, you can re-run this script with a new task name or a new log time.")
                 sys.exit()
     else:
-        os.makedirs(f'{opt.result_path}/{opt.task}/{opt.log_time}')
+        os.makedirs(f'{opt.result_path}/{opt.task}/{opt.log_time}/fold-{opt.fold}')
 
 def save_job_config(opt):
     '''
@@ -218,5 +230,5 @@ def save_job_config(opt):
     else:
         NorV = ''
 
-    save_path = f'{opt.result_path}/{opt.task}/{opt.log_time}/{opt.log_time}-{opt.task}{NorV}.yaml'
+    save_path = f'{opt.result_path}/{opt.task}/{opt.log_time}/fold-{opt.fold}/{opt.log_time}-{opt.task}{NorV}.yaml'
     auto_update_config(opt, new_job_saving=save_path)
