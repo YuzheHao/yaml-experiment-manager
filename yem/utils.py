@@ -57,32 +57,32 @@ def auto_update_config(opt, new_job_saving=False):
         yamlConfig = yaml_float_parsing(opt, yamlConfig)
     else:
         if opt.config=='config_default.yaml':
-            create_default = input(f"{Tag['x']} Default_config不存在，是否创建? (yes/no): ")
+            create_default = input(f"{Tag['x']} Default_config doesn't exist, create? (yes/no): ")
             if create_default.lower() == 'yes':
                 yamlConfig = {}
             else:
-                raise ValueError(f"{Tag['x']} 指定的config文件不存在: {opt.config}")
+                raise ValueError(f"{Tag['x']} The defined config file doesn't exist: {opt.config}")
         else:
-            raise ValueError(f"{Tag['x']} 指定的config文件不存在: {opt.config}")
+            raise ValueError(f"{Tag['x']} The defined config file doesn't exist: {opt.config}")
     defaultUpdated = False
 
     #~ 检查有没有现在已经不用的opt在当前config里
     expired_keys = [item for item in yamlConfig if item not in opt.__dict__]
     expireOp = None
     if len(expired_keys) != 0 and not new_job_saving:
-        print(f"{Tag['x']} 当前config包含不再使用的opt: {expired_keys}")
-        print(f'  1. 终止运行\n  2. 自动更新config文件, 移动过期opt至config末尾\n  3. 自动更新config文件, 删除过期opt')
-        expireOp = input(f"{Tag['t']} 请选择执行操作: (1/2/3): ")
+        print(f"{Tag['x']} The current config contains expired opt: {expired_keys}")
+        print(f'  1. Terminate runing\n  2. Auto update config file, move the expired opts to the end of config file\n  3. Auto update config file, delete expired opts')
+        expireOp = input(f"{Tag['t']} Please choose: (1/2/3): ")
         if expireOp not in ['2','3']:
-            sys.exit(f"{Tag['t']} 因为过期参数停止运行，你可以手动进行更新，或者删除位于自动update的config末尾的多余参数")
+            sys.exit(f"{Tag['t']} Terminate running due to the expired opts, you can mannually update the config file.")
 
     #~ 检查有没有现在已经不用的opt在当前config里
     new_keys = [k for k in opt.__dict__ if k not in yamlConfig]
     new_keys = [k for k in new_keys if k not in ['config', 'configNotes']]
     if len(new_keys) != 0:
-        newOp = input(f"{Tag['x']} 当前config缺少opt: {new_keys}\n  要使用默认值自动更新当前执行的config吗? (yes/no): ")
+        newOp = input(f"{Tag['x']} Current config lack the opt: {new_keys}\n  do you want to auto update this opt with its default value? (yes/no): ")
         if newOp.lower() != 'yes':
-            sys.exit(f"{Tag['t']} 因为缺少参数停止运行，你可以手动进行更新。")
+            sys.exit(f"{Tag['t']} Terminate running due to the lack of opts, you can mannually update the confile file.")
 
     #~ 新增/更新对应的config文件
     isUpdating = new_job_saving \
@@ -139,23 +139,23 @@ def auto_update_config(opt, new_job_saving=False):
                 for optkey in expired_keys:
                     print(f"  {optkey}: {yamlConfig[optkey]}", file=cfg)
             elif expireOp == '3':
-                print(f"{Tag['t']} 已移除config中的过期opt: {expired_keys}")
+                print(f"{Tag['t']} Remove the expired opts in config: {expired_keys}")
 
         if new_job_saving:
-            print(f"{Tag['ok']} 当前job文件已保存: {opt.config}")
+            print(f"{Tag['ok']} Save the current job config file: {opt.config}")
             return
 
         if isUpdating:
             if opt.config=='config_default.yaml' and defaultUpdated:
-                print(f"{Tag['ok']} Default_config已更新")
+                print(f"{Tag['ok']} Default_config is updated")
             else:
-                print(f"{Tag['ok']} Default_config无需更新~")
+                print(f"{Tag['ok']} Default_config is the newest~")
             if len(new_keys) != 0:
-                print(f"{Tag['ok']} Config新增opt: {new_keys}")
+                print(f"{Tag['ok']} Add new opt: {new_keys}")
             if len(expired_keys) != 0 and expireOp == '3':
-                print(f"{Tag['ok']} 移除过期opt: {expired_keys}")
+                print(f"{Tag['ok']} Remove expired opt: {expired_keys}")
         else:
-            print(f"{Tag['ok']} Config无需更新~")
+            print(f"{Tag['ok']} Config is the newest~")
 
         return
 
@@ -202,15 +202,15 @@ def check_job_path(opt):
     Args:
         opt: the parsed args from opts.py
     '''
-    if os.path.exists(f'{opt.result_path}/{opt.task}/{opt.log_time}/fold-{opt.fold}'):
+    if os.path.exists(f'{opt.result_path}/{opt.task}/{opt.log_time}'):
         #> if detected a finished job, ask user if continue
-        if os.path.exists(f'{opt.result_path}/{opt.task}/{opt.log_time}/fold-{opt.fold}/.FINISHED_JOB'):
+        if os.path.exists(f'{opt.result_path}/{opt.task}/{opt.log_time}/.FINISHED_JOB'):
             user_input = input(f"A Finished job [{opt.task}-{opt.log_time}] is already existed.\nIf continue the previous checkpoint may be overwritten.\nDo you really want to continue? (yes/no): ")
             if user_input.lower() != "yes":
                 print("The job have stopped, you can re-run this script with a new task name or a new log time.")
                 sys.exit()
     else:
-        os.makedirs(f'{opt.result_path}/{opt.task}/{opt.log_time}/fold-{opt.fold}')
+        os.makedirs(f'{opt.result_path}/{opt.task}/{opt.log_time}')
 
 def save_job_config(opt):
     '''
@@ -230,5 +230,5 @@ def save_job_config(opt):
     else:
         NorV = ''
 
-    save_path = f'{opt.result_path}/{opt.task}/{opt.log_time}/fold-{opt.fold}/{opt.log_time}-{opt.task}{NorV}.yaml'
+    save_path = f'{opt.result_path}/{opt.task}/{opt.log_time}/{opt.log_time}-{opt.task}{NorV}.yaml'
     auto_update_config(opt, new_job_saving=save_path)
