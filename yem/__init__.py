@@ -28,7 +28,7 @@ def parse_opts():
         help='Some comments about this experiment')
 
 
-    optNotes['YourParameter'] = '#~ task basic information'
+    optNotes['param_A'] = '#~ task 123 information'
     parser.add_argument('--param_A', type=str,
         default='AAA',
         help='YourParameter')
